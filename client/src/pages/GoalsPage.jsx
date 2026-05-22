@@ -14,7 +14,7 @@ function GoalCard({ goal, onEdit, onDelete, colour }) {
   const pace = goal.current > 0 ? (goal.target / goal.current) : 0;
 
   const formatVal = (v) => {
-    if (goal.unit === "GBP") return formatCurrency(v);
+    if (goal.unit === "AUD" || goal.unit === "GBP") return formatCurrency(v);
     return `${v} ${goal.unit}`;
   };
 
@@ -59,7 +59,7 @@ function GoalForm({ goal, onSave, onClose }) {
     target: goal?.target || "",
     current: goal?.current || 0,
     period: goal?.period || "monthly",
-    unit: goal?.unit || "GBP",
+    unit: goal?.unit || "AUD",
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 

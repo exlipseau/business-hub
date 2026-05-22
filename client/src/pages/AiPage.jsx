@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, RefreshCw, Calendar } from "lucide-react";
+import { Send, Bot, User, Loader2, RefreshCw, Calendar, FileUp, CheckCircle2 } from "lucide-react";
 import { api } from "../utils/api.js";
 
 function Message({ msg }) {
@@ -36,6 +36,10 @@ export default function AiPage() {
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [debriefLoading, setDebriefLoading] = useState(false);
   const [noApiKey, setNoApiKey] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfResult, setPdfResult] = useState(null);
+  const [pdfBusiness, setPdfBusiness] = useState("mbm");
+  const fileInputRef = useRef();
   const bottomRef = useRef();
 
   useEffect(() => {
@@ -86,6 +90,41 @@ export default function AiPage() {
       setMessages((prev) => [...prev, { role: "assistant", content: "Error: " + e.message }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setPdfResult({ error: "Please upload a PDF file" });
+      return;
+    }
+    setPdfUploading(true);
+    setPdfResult(null);
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const comma = result.indexOf(",");
+          resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const data = await api.post("/ai/extract-tasks-pdf", {
+        pdfBase64: base64,
+        businessId: pdfBusiness,
+        filename: file.name,
+      });
+      setPdfResult({ count: data.count, tasks: data.created, filename: file.name });
+    } catch (err) {
+      if (err.message?.includes("API key")) setNoApiKey(true);
+      setPdfResult({ error: err.message || "Upload failed" });
+    } finally {
+      setPdfUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -205,6 +244,77 @@ export default function AiPage() {
             ) : (
               <p className="text-sm text-text-muted">{noApiKey ? "Add your API key to see the briefing" : "Click refresh to generate"}</p>
             )}
+          </div>
+
+          {/* PDF → Tasks */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-3">
+              <FileUp size={15} className="text-mbm" />
+              <h2 className="section-title">PDF → Tasks</h2>
+            </div>
+            <p className="text-xs text-text-muted mb-3">
+              Upload a PDF (brief, meeting notes, scope doc) and Claude will extract actionable tasks and add them automatically.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="label block mb-1.5">Add tasks to</label>
+                <select
+                  className="select w-full"
+                  value={pdfBusiness}
+                  onChange={(e) => setPdfBusiness(e.target.value)}
+                  disabled={pdfUploading}
+                >
+                  <option value="mbm">Made by Max</option>
+                  <option value="tradex">Tradex</option>
+                </select>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                onChange={handlePdfUpload}
+                disabled={pdfUploading}
+                className="hidden"
+                id="pdf-upload"
+              />
+              <label
+                htmlFor="pdf-upload"
+                className={`btn-primary w-full flex items-center justify-center gap-2 cursor-pointer ${pdfUploading ? "opacity-60 pointer-events-none" : ""}`}
+              >
+                {pdfUploading ? (
+                  <><Loader2 size={15} className="animate-spin" /> Extracting tasks...</>
+                ) : (
+                  <><FileUp size={15} /> Choose PDF file</>
+                )}
+              </label>
+              {pdfResult?.error && (
+                <p className="text-xs text-danger">{pdfResult.error}</p>
+              )}
+              {pdfResult?.count > 0 && (
+                <div className="bg-success/10 border border-success/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={14} className="text-success" />
+                    <p className="text-sm font-medium text-success">
+                      Added {pdfResult.count} task{pdfResult.count !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <ul className="space-y-1 text-xs text-text">
+                    {pdfResult.tasks.slice(0, 6).map((t) => (
+                      <li key={t.id} className="flex gap-2">
+                        <span className="text-success">·</span>
+                        <span className="truncate">{t.title}</span>
+                      </li>
+                    ))}
+                    {pdfResult.tasks.length > 6 && (
+                      <li className="text-text-muted">…and {pdfResult.tasks.length - 6} more</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              {pdfResult?.count === 0 && (
+                <p className="text-xs text-text-muted">No actionable tasks found in that PDF.</p>
+              )}
+            </div>
           </div>
 
           {/* Weekly debrief */}

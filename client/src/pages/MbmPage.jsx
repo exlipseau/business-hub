@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Plus, ChevronRight, Clock, DollarSign, Calendar } from "lucide-react";
+import { Plus, ChevronRight, Clock, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { api } from "../utils/api.js";
 import { formatDate, formatCurrency, formatHours, stageColour, STAGES_MBM } from "../utils/format.js";
 import Modal from "../components/shared/Modal.jsx";
@@ -38,7 +39,7 @@ function ProjectForm({ project, onSave, onClose, onDelete }) {
         </div>
       </div>
       <div>
-        <label className="label block mb-1.5">Revenue (£)</label>
+        <label className="label block mb-1.5">Revenue ($)</label>
         <input className="input" type="number" value={form.revenue} onChange={(e) => set("revenue", e.target.value)} placeholder="0" />
       </div>
       <div>
@@ -146,6 +147,33 @@ export default function MbmPage() {
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
     .slice(0, 5);
 
+  // Revenue by month — uses project createdAt to bucket revenue
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+  const revenueThisMonth = projects
+    .filter((p) => p.createdAt && new Date(p.createdAt) >= thisMonthStart)
+    .reduce((s, p) => s + (p.revenue || 0), 0);
+  const revenueLastMonth = projects
+    .filter((p) => p.createdAt && new Date(p.createdAt) >= lastMonthStart && new Date(p.createdAt) <= lastMonthEnd)
+    .reduce((s, p) => s + (p.revenue || 0), 0);
+
+  // Last 6 months chart data
+  const monthlyRevenue = [];
+  for (let i = 5; i >= 0; i--) {
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+    const total = projects
+      .filter((p) => p.createdAt && new Date(p.createdAt) >= monthStart && new Date(p.createdAt) <= monthEnd)
+      .reduce((s, p) => s + (p.revenue || 0), 0);
+    monthlyRevenue.push({
+      name: monthStart.toLocaleDateString("en-AU", { month: "short" }),
+      revenue: total,
+    });
+  }
+
   if (loading) return <div className="flex items-center justify-center h-full"><div className="w-6 h-6 border-2 border-mbm border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -164,18 +192,51 @@ export default function MbmPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="stat-card border-l-2 border-mbm">
+          <span className="stat-label">Revenue this month</span>
+          <span className="stat-value text-mbm">{formatCurrency(revenueThisMonth)}</span>
+        </div>
+        <div className="stat-card border-l-2 border-mbm">
+          <span className="stat-label">Revenue last month</span>
+          <span className="stat-value text-mbm">{formatCurrency(revenueLastMonth)}</span>
+        </div>
+        <div className="stat-card border-l-2 border-mbm">
+          <span className="stat-label">All-time revenue</span>
+          <span className="stat-value text-mbm">{formatCurrency(totalRevenue)}</span>
+        </div>
         <div className="stat-card border-l-2 border-mbm">
           <span className="stat-label">Active projects</span>
           <span className="stat-value">{activeProjects.length}</span>
         </div>
-        <div className="stat-card border-l-2 border-mbm">
-          <span className="stat-label">Revenue this month</span>
-          <span className="stat-value text-mbm">{formatCurrency(totalRevenue)}</span>
+      </div>
+
+      {/* Monthly revenue chart */}
+      <div className="card mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="section-title flex items-center gap-2">
+            <TrendingUp size={16} className="text-mbm" />
+            Monthly revenue
+          </h2>
+          <span className="text-xs text-text-muted">Last 6 months</span>
         </div>
-        <div className="stat-card border-l-2 border-mbm">
-          <span className="stat-label">Total projects</span>
-          <span className="stat-value">{projects.length}</span>
+        <div style={{ width: "100%", height: 220 }}>
+          <ResponsiveContainer>
+            <BarChart data={monthlyRevenue} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" stroke="#6b7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+              <Tooltip
+                cursor={{ fill: "rgba(59,130,246,0.08)" }}
+                contentStyle={{ background: "#0a0a0f", border: "1px solid #1f2937", borderRadius: 8, fontSize: 12 }}
+                formatter={(value) => [formatCurrency(value), "Revenue"]}
+              />
+              <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+                {monthlyRevenue.map((_, i) => (
+                  <Cell key={i} fill="#3b82f6" />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

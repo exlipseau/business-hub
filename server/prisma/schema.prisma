@@ -45,6 +45,7 @@ model Task {
   title      String
   category   String    @default("Admin")
   priority   String    @default("medium")
+  stage      String?
   dueDate    DateTime?
   startTime  DateTime?
   duration   Int?

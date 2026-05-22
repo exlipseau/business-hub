@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Plus, AlertCircle, DollarSign } from "lucide-react";
+import { Plus, AlertCircle, DollarSign, Users } from "lucide-react";
 import { api } from "../utils/api.js";
 import { formatCurrency, formatDate, leadStageColour, STAGES_LEAD, SOURCES } from "../utils/format.js";
 import { isAfter, parseISO } from "date-fns";
@@ -52,7 +52,7 @@ function LeadForm({ lead, onSave, onClose, onDelete }) {
           </select>
         </div>
         <div>
-          <label className="label block mb-1.5">Value (£)</label>
+          <label className="label block mb-1.5">Value ($)</label>
           <input className="input" type="number" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder="0" />
         </div>
       </div>

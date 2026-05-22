@@ -121,4 +121,73 @@ router.get("/weekly-debrief", async (req, res, next) => {
   }
 });
 
+router.post("/extract-tasks-pdf", async (req, res, next) => {
+  try {
+    const { pdfBase64, businessId = "mbm", filename = "document.pdf" } = req.body;
+    if (!pdfBase64) return res.status(400).json({ error: "Missing pdfBase64" });
+
+    const apiKey = await getApiKey(req.prisma);
+    if (!apiKey) return res.status(400).json({ error: "No Anthropic API key configured" });
+
+    const client = new Anthropic({ apiKey });
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      system: `You extract actionable tasks from documents. Return ONLY a JSON array of task objects, no prose, no markdown fences. Each task object has: title (string, required, short and actionable), category (one of: "Client Work", "Admin", "Development", "Marketing", "Sales", "Meeting", "Support"), priority (one of: "low", "medium", "high"), dueDate (ISO date string or null), notes (optional string with details from the document). Example output: [{"title":"Send invoice to client","category":"Admin","priority":"high","dueDate":null,"notes":"Mentioned on page 2"}]`,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: { type: "base64", media_type: "application/pdf", data: pdfBase64 },
+            },
+            {
+              type: "text",
+              text: `Extract every actionable task or to-do item from this document (${filename}). Return ONLY a JSON array — no explanation, no markdown fences.`,
+            },
+          ],
+        },
+      ],
+    });
+
+    let raw = response.content[0].text.trim();
+    // Strip code fences if Claude added them
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    let tasks;
+    try {
+      tasks = JSON.parse(raw);
+    } catch (e) {
+      return res.status(500).json({ error: "Could not parse AI response", raw });
+    }
+    if (!Array.isArray(tasks)) {
+      return res.status(500).json({ error: "AI response was not an array", raw });
+    }
+
+    // Persist tasks
+    const created = [];
+    for (const t of tasks) {
+      if (!t.title) continue;
+      const data = {
+        businessId,
+        title: String(t.title).slice(0, 200),
+        category: t.category || "Admin",
+        priority: ["low", "medium", "high"].includes(t.priority) ? t.priority : "medium",
+        dueDate: t.dueDate ? new Date(t.dueDate) : null,
+        notes: t.notes ? `[From ${filename}] ${t.notes}` : `From ${filename}`,
+        completed: false,
+      };
+      if (data.dueDate && isNaN(data.dueDate)) data.dueDate = null;
+      const task = await req.prisma.task.create({ data });
+      created.push(task);
+    }
+
+    res.json({ created, count: created.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
