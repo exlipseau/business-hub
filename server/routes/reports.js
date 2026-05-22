@@ -22,12 +22,84 @@ function getMonthRange() {
   return { start, end };
 }
 
+function buildCredentials({ timeEntries, tasksCompleted, tasksPending, interactions, events, leads, goals, projects }) {
+  const totalMinutes = timeEntries.reduce((s, e) => s + (e.duration || 0), 0);
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+  const overdueCount = tasksPending.filter((t) => t.dueDate && new Date(t.dueDate) < new Date()).length;
+  const onTimeCount = tasksCompleted.filter((t) => !t.dueDate || new Date(t.updatedAt) <= new Date(t.dueDate)).length;
+
+  const uniqueTrackingDays = new Set(timeEntries.map((e) => new Date(e.startTime).toDateString())).size;
+
+  const goalsWithProgress = goals.filter((g) => g.current > 0);
+  const goalsOnTrack = goals.filter((g) => g.target > 0 && (g.current / g.target) >= 0.5).length;
+
+  const meetingCount = interactions.filter((i) => i.type === "meeting").length;
+  const callCount = interactions.filter((i) => i.type === "call").length;
+  const emailCount = interactions.filter((i) => i.type === "email").length;
+  const totalInteractions = interactions.length;
+
+  const calendarMeetings = events.filter((e) => e.category === "Meeting" || e.category === "Sales");
+  const clientProjects = projects.filter((p) => p.stage !== "Live" && p.stage !== "Cancelled");
+
+  const leadsContacted = leads.filter((l) => l.lastContact).length;
+
+  return {
+    communication: {
+      score: Math.min(100, (totalInteractions * 15) + (calendarMeetings.length * 10) + (leads.length * 5)),
+      meetings: meetingCount,
+      calls: callCount,
+      emails: emailCount,
+      totalInteractions,
+      calendarMeetings: calendarMeetings.length,
+      leadsContacted,
+      activeClients: clientProjects.length,
+      evidence: interactions.slice(0, 5),
+    },
+    empiricalReasoning: {
+      score: Math.min(100, (projects.length * 12) + (leads.length * 8) + (goals.length * 10)),
+      projectsManaged: projects.length,
+      leadsInPipeline: leads.length,
+      stagesTracked: [...new Set(projects.map((p) => p.stage))].length,
+      goalsSet: goals.length,
+      businessesAnalysed: 2,
+      evidence: projects.slice(0, 4),
+    },
+    quantitativeReasoning: {
+      score: Math.min(100, (totalHours * 2) + (goals.length * 15)),
+      hoursTracked: totalHours,
+      trackingDays: uniqueTrackingDays,
+      goalsWithData: goalsWithProgress.length,
+      revenue: projects.reduce((s, p) => s + (p.revenue || 0), 0),
+      hoursByBusiness: Object.entries(
+        timeEntries.reduce((acc, e) => {
+          const b = e.business?.name || "General";
+          acc[b] = (acc[b] || 0) + (e.duration || 0);
+          return acc;
+        }, {})
+      ).map(([name, mins]) => ({ name, hours: Math.round((mins / 60) * 10) / 10 })),
+      goals,
+    },
+    personalQualities: {
+      score: Math.min(100, (tasksCompleted.length * 10) + (onTimeCount * 5) + (uniqueTrackingDays * 8) + (goalsOnTrack * 15)),
+      tasksCompleted: tasksCompleted.length,
+      tasksPending: tasksPending.length,
+      onTimeCount,
+      overdueCount,
+      uniqueTrackingDays,
+      goalsOnTrack,
+      totalGoals: goals.length,
+      selfDirected: totalHours,
+    },
+  };
+}
+
 router.get("/weekly", async (req, res, next) => {
   try {
     const { start, end } = getWeekRange();
     const prisma = req.prisma;
 
-    const [timeEntries, tasksCompleted, tasksPending, newLeads, events, goals] = await Promise.all([
+    const [timeEntries, tasksCompleted, tasksPending, newLeads, events, goals, interactions, projects] = await Promise.all([
       prisma.timeEntry.findMany({
         where: { startTime: { gte: start, lte: end } },
         include: { business: { select: { name: true, colour: true } } },
@@ -53,6 +125,12 @@ router.get("/weekly", async (req, res, next) => {
         orderBy: { start: "asc" },
       }),
       prisma.goal.findMany({ include: { business: { select: { name: true } } } }),
+      prisma.interaction.findMany({
+        where: { date: { gte: start, lte: end } },
+        include: { contact: { select: { name: true, company: true } } },
+        orderBy: { date: "desc" },
+      }),
+      prisma.project.findMany({ include: { business: { select: { name: true } } } }),
     ]);
 
     const hoursByBusiness = {};
@@ -66,6 +144,8 @@ router.get("/weekly", async (req, res, next) => {
       hoursByCategory[e.category] = (hoursByCategory[e.category] || 0) + mins;
     }
 
+    const leads = await prisma.lead.findMany({ include: { business: { select: { name: true } } } });
+
     res.json({
       period: { start, end },
       totalHours: Math.round((totalMinutes / 60) * 10) / 10,
@@ -76,6 +156,8 @@ router.get("/weekly", async (req, res, next) => {
       newLeads,
       events,
       goals,
+      interactions,
+      credentials: buildCredentials({ timeEntries, tasksCompleted, tasksPending, interactions, events, leads, goals, projects }),
     });
   } catch (err) {
     next(err);
@@ -87,7 +169,7 @@ router.get("/monthly", async (req, res, next) => {
     const { start, end } = getMonthRange();
     const prisma = req.prisma;
 
-    const [timeEntries, projects, leads, goals, tasksCompleted, tasksPending] = await Promise.all([
+    const [timeEntries, projects, leads, goals, tasksCompleted, tasksPending, interactions, events] = await Promise.all([
       prisma.timeEntry.findMany({
         where: { startTime: { gte: start, lte: end } },
         include: { business: { select: { name: true, colour: true } } },
@@ -109,6 +191,15 @@ router.get("/monthly", async (req, res, next) => {
         where: { completed: false },
         include: { business: { select: { name: true } } },
         orderBy: { priority: "desc" },
+      }),
+      prisma.interaction.findMany({
+        where: { date: { gte: start, lte: end } },
+        include: { contact: { select: { name: true, company: true } } },
+        orderBy: { date: "desc" },
+      }),
+      prisma.calendarEvent.findMany({
+        where: { start: { gte: start, lte: end } },
+        include: { business: { select: { name: true } } },
       }),
     ]);
 
@@ -149,6 +240,8 @@ router.get("/monthly", async (req, res, next) => {
       tasksCompleted,
       tasksPending,
       leads,
+      interactions,
+      credentials: buildCredentials({ timeEntries, tasksCompleted, tasksPending, interactions, events, leads, goals, projects }),
     });
   } catch (err) {
     next(err);
