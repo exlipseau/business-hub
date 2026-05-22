@@ -1,0 +1,17 @@
+{
+  "name": "business-hub",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "npm install --prefix client && npm run build --prefix client && npm install --prefix server && npm run db:generate --prefix server",
+    "start": "cd server && npx prisma db push && node index.js",
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

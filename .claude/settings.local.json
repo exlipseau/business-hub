@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/local/**)",
+      "Read(//usr/**)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); node --version)",
+      "PowerShell(winget list --name node 2>&1)",
+      "PowerShell(Get-Command winget -ErrorAction SilentlyContinue)",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:3001/api/calendar)",
+      "Bash(curl -s http://localhost:3001/api/dashboard)",
+      "Bash(start cmd *)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"C:\\\\Users\\\\maxbt\\\\Documents\\\\Business_App\\\\server\"; node --version; npm --version)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3001/api/calendar?from=&to=\" -UseBasicParsing -TimeoutSec 5; \"Status: $\\($r.StatusCode\\), Content: $\\($r.Content.Substring\\(0, [Math]::Min\\(100, $r.Content.Length\\)\\)\\)\" } catch { \"Error: $\\($_.Exception.Message\\)\" })",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3001/api/settings\" -UseBasicParsing -TimeoutSec 5; $r.Content | ConvertFrom-Json | Where-Object { $_.key -eq \"anthropic_api_key\" } | Select-Object key, @{N=\"value\";E={$_.value.Substring\\(0,20\\) + \"...\"}})"
+    ]
+  }
+}
