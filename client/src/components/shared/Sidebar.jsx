@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Calendar, Globe, Wrench, Users, BookUser,
-  Target, Timer, Bot, Settings, ChevronLeft, ChevronRight, Circle,
+  Target, Timer, Bot, Settings, ChevronLeft, ChevronRight, Circle, FileText,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext.jsx";
 
@@ -16,6 +16,7 @@ const NAV = [
   { to: "/goals", icon: Target, label: "Goals" },
   { to: "/time", icon: Timer, label: "Time Tracker" },
   { to: "/ai", icon: Bot, label: "AI Assistant" },
+  { to: "/reports", icon: FileText, label: "Reports" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 

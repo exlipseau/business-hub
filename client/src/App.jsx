@@ -12,6 +12,7 @@ import GoalsPage from "./pages/GoalsPage.jsx";
 import TimeTrackerPage from "./pages/TimeTrackerPage.jsx";
 import AiPage from "./pages/AiPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
+import ReportsPage from "./pages/ReportsPage.jsx";
 
 function AppRoutes() {
   const { loading } = useApp();
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/time" element={<TimeTrackerPage />} />
         <Route path="/ai" element={<AiPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

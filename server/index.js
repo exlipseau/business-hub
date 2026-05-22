@@ -17,6 +17,7 @@ import calendarRoutes from "./routes/calendar.js";
 import aiRoutes from "./routes/ai.js";
 import settingsRoutes from "./routes/settings.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import reportsRoutes from "./routes/reports.js";
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use("/api/calendar", calendarRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
