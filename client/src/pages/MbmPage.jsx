@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, ChevronRight, Clock, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { Plus, ChevronRight, Clock, DollarSign, Calendar, TrendingUp, CheckSquare, Square, Trash2, ListTodo } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { api } from "../utils/api.js";
 import { formatDate, formatCurrency, formatHours, stageColour, STAGES_MBM } from "../utils/format.js";
@@ -55,6 +55,116 @@ function ProjectForm({ project, onSave, onClose, onDelete }) {
   );
 }
 
+function ProjectTasks({ projectId, businessId }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newTitle, setNewTitle] = useState("");
+  const [newPriority, setNewPriority] = useState("medium");
+  const [adding, setAdding] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    api.get(`/tasks?projectId=${projectId}`).then(setTasks).finally(() => setLoading(false));
+  }, [projectId]);
+
+  const addTask = async (e) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    setAdding(true);
+    try {
+      const task = await api.post("/tasks", {
+        businessId,
+        projectId,
+        title: newTitle.trim(),
+        priority: newPriority,
+        category: "Client Work",
+        completed: false,
+      });
+      setTasks((prev) => [...prev, task]);
+      setNewTitle("");
+      setShowAdd(false);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const toggleTask = async (task) => {
+    const updated = await api.put(`/tasks/${task.id}`, { ...task, completed: !task.completed });
+    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  };
+
+  const deleteTask = async (id) => {
+    await api.delete(`/tasks/${id}`);
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const done = tasks.filter((t) => t.completed).length;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <ListTodo size={14} className="text-mbm" />
+          <span className="font-semibold text-sm text-text">Tasks</span>
+          {tasks.length > 0 && (
+            <span className="text-xs text-text-muted">{done}/{tasks.length}</span>
+          )}
+        </div>
+        <button onClick={() => setShowAdd((v) => !v)} className="text-xs text-mbm hover:text-mbm/80 flex items-center gap-1">
+          <Plus size={13} /> Add task
+        </button>
+      </div>
+
+      {showAdd && (
+        <form onSubmit={addTask} className="flex gap-2 mb-3">
+          <input
+            className="input flex-1 text-sm py-1.5"
+            placeholder="Task title..."
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            autoFocus
+          />
+          <select className="select text-sm py-1.5 px-2" value={newPriority} onChange={(e) => setNewPriority(e.target.value)}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <button type="submit" disabled={adding || !newTitle.trim()} className="btn-primary text-xs px-3">Add</button>
+          <button type="button" onClick={() => setShowAdd(false)} className="btn-ghost text-xs px-2">✕</button>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="py-4 flex justify-center"><div className="w-4 h-4 border-2 border-mbm border-t-transparent rounded-full animate-spin" /></div>
+      ) : tasks.length === 0 ? (
+        <p className="text-xs text-text-muted py-2">No tasks yet — add one above.</p>
+      ) : (
+        <div className="space-y-1">
+          {tasks.map((task) => (
+            <div key={task.id} className="flex items-center gap-2 group py-1.5 px-2 rounded-lg hover:bg-surface transition-colors">
+              <button onClick={() => toggleTask(task)} className="flex-shrink-0 text-text-muted hover:text-mbm transition-colors">
+                {task.completed ? <CheckSquare size={15} className="text-mbm" /> : <Square size={15} />}
+              </button>
+              <span className={`flex-1 text-sm ${task.completed ? "line-through text-text-muted" : "text-text"}`}>
+                {task.title}
+              </span>
+              <span className={`text-[10px] flex-shrink-0 ${task.priority === "high" ? "text-danger" : task.priority === "medium" ? "text-warning" : "text-text-muted"}`}>
+                {task.priority}
+              </span>
+              <button onClick={() => deleteTask(task.id)} className="opacity-0 group-hover:opacity-100 flex-shrink-0 text-text-muted hover:text-danger transition-all">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+          {done > 0 && done === tasks.length && (
+            <p className="text-xs text-success text-center pt-2">✓ All tasks complete!</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProjectDetail({ project, onClose, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [p, setP] = useState(project);
@@ -96,6 +206,9 @@ function ProjectDetail({ project, onClose, onUpdate }) {
               <p className="text-sm text-text whitespace-pre-wrap">{p.notes}</p>
             </div>
           )}
+          <div className="bg-surface rounded-lg p-4">
+            <ProjectTasks projectId={p.id} businessId={p.businessId} />
+          </div>
         </div>
       )}
     </div>
@@ -263,6 +376,7 @@ export default function MbmPage() {
                       <div className="flex items-center gap-4 text-xs text-text-muted">
                         <span className="flex items-center gap-1"><Clock size={11} />{formatHours((p.hoursLogged || 0) * 60)}</span>
                         <span className="flex items-center gap-1 text-mbm font-medium">{formatCurrency(p.revenue)}</span>
+                        {p._count?.tasks > 0 && <span className="flex items-center gap-1"><ListTodo size={11} />{p._count.tasks} task{p._count.tasks !== 1 ? "s" : ""}</span>}
                         {p.deadline && <span className="flex items-center gap-1"><Calendar size={11} />{formatDate(p.deadline)}</span>}
                       </div>
                     </div>

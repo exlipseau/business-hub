@@ -5,6 +5,7 @@ const router = Router();
 function coerce(data) {
   const out = { ...data };
   if (out.businessId === "") out.businessId = null;
+  if (out.projectId === "" || out.projectId === undefined) out.projectId = null;
   if (out.dueDate !== undefined) out.dueDate = out.dueDate ? new Date(out.dueDate) : null;
   if (out.startTime !== undefined) out.startTime = out.startTime ? new Date(out.startTime) : null;
   if (out.duration !== undefined && out.duration !== null && out.duration !== "") {
@@ -17,9 +18,10 @@ function coerce(data) {
 
 router.get("/", async (req, res, next) => {
   try {
-    const { businessId, completed, dueToday } = req.query;
+    const { businessId, projectId, completed, dueToday } = req.query;
     const where = {};
     if (businessId) where.businessId = businessId;
+    if (projectId) where.projectId = projectId;
     if (completed !== undefined) where.completed = completed === "true";
     if (dueToday === "true") {
       const start = new Date();
@@ -28,7 +30,7 @@ router.get("/", async (req, res, next) => {
       end.setHours(23, 59, 59, 999);
       where.dueDate = { gte: start, lte: end };
     }
-    const tasks = await req.prisma.task.findMany({ where, orderBy: { dueDate: "asc" } });
+    const tasks = await req.prisma.task.findMany({ where, orderBy: { createdAt: "asc" } });
     res.json(tasks);
   } catch (err) { next(err); }
 });

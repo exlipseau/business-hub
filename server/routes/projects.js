@@ -15,7 +15,11 @@ router.get("/", async (req, res, next) => {
   try {
     const { businessId } = req.query;
     const where = businessId ? { businessId } : {};
-    const projects = await req.prisma.project.findMany({ where, orderBy: { updatedAt: "desc" } });
+    const projects = await req.prisma.project.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      include: { _count: { select: { tasks: true } } },
+    });
     res.json(projects);
   } catch (err) { next(err); }
 });
@@ -33,7 +37,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { id, createdAt, updatedAt, business, timeEntries, ...raw } = req.body;
+    const { id, createdAt, updatedAt, business, timeEntries, tasks, _count, ...raw } = req.body;
     const project = await req.prisma.project.create({ data: coerce(raw) });
     res.json(project);
   } catch (err) { next(err); }
@@ -41,7 +45,7 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    const { id, createdAt, updatedAt, business, timeEntries, ...raw } = req.body;
+    const { id, createdAt, updatedAt, business, timeEntries, tasks, _count, ...raw } = req.body;
     const project = await req.prisma.project.update({
       where: { id: req.params.id },
       data: coerce(raw),
