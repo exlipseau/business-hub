@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home, Calendar, Globe, Wrench, Users, BookUser,
-  Target, Timer, Bot, Settings, ChevronLeft, ChevronRight, Circle, FileText,
+  Target, Timer, Bot, Settings, ChevronLeft, ChevronRight, Circle, FileText, CheckSquare,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext.jsx";
 
@@ -11,6 +11,7 @@ const NAV = [
   { to: "/calendar", icon: Calendar, label: "Calendar" },
   { to: "/mbm", icon: Globe, label: "Made by Max", colour: "#3b82f6" },
   { to: "/tradex", icon: Wrench, label: "Tradex", colour: "#f59e0b" },
+  { to: "/tasks", icon: CheckSquare, label: "Tasks" },
   { to: "/leads", icon: Users, label: "Leads" },
   { to: "/crm", icon: BookUser, label: "CRM" },
   { to: "/goals", icon: Target, label: "Goals" },
