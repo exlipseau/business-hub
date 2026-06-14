@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   Plus, ArrowRight, CheckCheck, Clock, Inbox, Loader2, Trash2,
-  CheckSquare, LayoutKanban, ListChecks,
+  CheckSquare, Kanban, ListChecks,
 } from "lucide-react";
 import { api } from "../utils/api.js";
 import { formatDate, CATEGORIES } from "../utils/format.js";
@@ -364,7 +364,7 @@ export default function TasksPage() {
               : "text-text-muted hover:text-text"
           }`}
         >
-          <LayoutKanban size={14} /> Board
+          <Kanban size={14} /> Board
         </button>
         <button
           onClick={() => setView("completed")}
