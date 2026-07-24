@@ -50,6 +50,7 @@ export function isDueToday(d) {
 }
 
 export const STAGES_MBM = ["Discovery", "Design", "Build", "Revisions", "Live", "Invoiced"];
+export const STAGES_APC = ["Enquiry", "Quote Sent", "Scheduled", "In Progress", "Complete", "Invoiced"];
 export const STAGES_LEAD = ["New", "Contacted", "Proposal Sent", "Negotiating", "Won", "Lost"];
 export const CATEGORIES = ["Client Work", "Admin", "Development", "Marketing", "Sales", "Meeting", "Support"];
 export const PRIORITIES = ["low", "medium", "high"];
@@ -69,6 +70,18 @@ export function stageColour(stage) {
     Build: "bg-yellow-500/10 text-yellow-400",
     Revisions: "bg-orange-500/10 text-orange-400",
     Live: "bg-green-500/10 text-green-400",
+    Invoiced: "bg-gray-500/10 text-gray-400",
+  };
+  return map[stage] || "bg-border text-text-muted";
+}
+
+export function apcStageColour(stage) {
+  const map = {
+    Enquiry: "bg-blue-500/10 text-blue-400",
+    "Quote Sent": "bg-purple-500/10 text-purple-400",
+    Scheduled: "bg-yellow-500/10 text-yellow-400",
+    "In Progress": "bg-orange-500/10 text-orange-400",
+    Complete: "bg-green-500/10 text-green-400",
     Invoiced: "bg-gray-500/10 text-gray-400",
   };
   return map[stage] || "bg-border text-text-muted";

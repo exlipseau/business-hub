@@ -14,6 +14,7 @@ import AiPage from "./pages/AiPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import TasksPage from "./pages/TasksPage.jsx";
+import AureliusPage from "./pages/AureliusPage.jsx";
 
 function AppRoutes() {
   const { loading } = useApp();
@@ -33,6 +34,7 @@ function AppRoutes() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/mbm" element={<MbmPage />} />
         <Route path="/tradex" element={<TradexPage />} />
+        <Route path="/aurelius" element={<AureliusPage />} />
         <Route path="/leads" element={<LeadsPage />} />
         <Route path="/crm" element={<CrmPage />} />
         <Route path="/goals" element={<GoalsPage />} />

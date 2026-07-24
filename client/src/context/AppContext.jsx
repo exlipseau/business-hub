@@ -11,6 +11,7 @@ export function AppProvider({ children }) {
 
   const mbm = businesses.find((b) => b.id === "mbm");
   const tradex = businesses.find((b) => b.id === "tradex");
+  const apc = businesses.find((b) => b.id === "apc");
 
   const loadBusinesses = useCallback(async () => {
     try {
@@ -35,6 +36,7 @@ export function AppProvider({ children }) {
   const getBusinessColour = (businessId) => {
     if (businessId === "mbm") return "#3b82f6";
     if (businessId === "tradex") return "#f59e0b";
+    if (businessId === "apc") return "#16a34a";
     return "#7070a0";
   };
 
@@ -49,6 +51,7 @@ export function AppProvider({ children }) {
         businesses,
         mbm,
         tradex,
+        apc,
         filterBusiness,
         setFilterBusiness,
         loading,

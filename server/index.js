@@ -77,11 +77,17 @@ async function initData() {
     update: {},
     create: { id: "tradex", name: "Tradex", colour: "#f59e0b", type: "product" },
   });
+  await prisma.business.upsert({
+    where: { id: "apc" },
+    update: {},
+    create: { id: "apc", name: "Aurelius Property Care", colour: "#16a34a", type: "service" },
+  });
 
   // Create default settings if missing (never overwrites existing values)
   const defaults = [
     { key: "mbm_monthly_target", value: "5000" },
     { key: "tradex_monthly_target", value: "2000" },
+    { key: "apc_monthly_target", value: "3000" },
     { key: "anthropic_api_key", value: process.env.ANTHROPIC_API_KEY || "" },
   ];
   for (const s of defaults) {

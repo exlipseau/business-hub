@@ -44,6 +44,8 @@ function BusinessPill({ businessId }) {
     return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-mbm/15 text-mbm tracking-wide">MBM</span>;
   if (businessId === "tradex")
     return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-tradex/15 text-tradex tracking-wide">TRADEX</span>;
+  if (businessId === "apc")
+    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-apc/15 text-apc tracking-wide">APC</span>;
   return null;
 }
 
@@ -150,6 +152,7 @@ function TaskForm({ task, onSave, onClose, onDelete }) {
           <select className="select" value={form.businessId} onChange={(e) => set("businessId", e.target.value)}>
             <option value="mbm">Made by Max</option>
             <option value="tradex">Tradex</option>
+            <option value="apc">Aurelius Property Care</option>
           </select>
         </div>
         <div>
@@ -331,6 +334,7 @@ export default function TasksPage() {
               ["all", "All"],
               ["mbm", "Made by Max"],
               ["tradex", "Tradex"],
+              ["apc", "Aurelius"],
             ].map(([val, label]) => (
               <button
                 key={val}

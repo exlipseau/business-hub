@@ -148,7 +148,7 @@ export default function LeadsPage() {
         <h1 className="font-display font-bold text-2xl text-text">Lead Tracker</h1>
         <div className="flex items-center gap-3">
           <div className="flex bg-surface border border-border rounded-lg overflow-hidden">
-            {[["all", "All"], ["mbm", "Made by Max"], ["tradex", "Tradex"]].map(([val, label]) => (
+            {[["all", "All"], ["mbm", "Made by Max"], ["tradex", "Tradex"], ["apc", "Aurelius"]].map(([val, label]) => (
               <button
                 key={val}
                 onClick={() => setBFilter(val)}

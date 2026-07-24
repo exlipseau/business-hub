@@ -16,6 +16,8 @@ export default {
         "mbm-dim": "#1e40af",
         tradex: "#f59e0b",
         "tradex-dim": "#92400e",
+        apc: "#16a34a",
+        "apc-dim": "#14532d",
         success: "#10b981",
         danger: "#ef4444",
         warning: "#f59e0b",
